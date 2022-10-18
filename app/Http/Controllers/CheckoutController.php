@@ -36,6 +36,67 @@ class CheckoutController extends Controller
             $carts = Cart::where('temp_user_id', $request->session()->get('temp_user_id'))->get();
         }
 
+        $this->_store_shipping_info($request, $carts);
+
+        if($carts->isEmpty()) {
+            flash(translate('Your cart is empty'))->warning();
+            return redirect()->route('home');
+        }
+
+        if (Auth::check()) {
+            $shipping_info = Address::where('id', $carts[0]['address_id'])->first();
+        } else {
+            $shipping_info = array_merge($destination = $carts[0]['destination'], [
+                'city' => City::find($destination['city_id'])->name,
+                'state' => State::find($destination['state_id'])->name,
+                'country' => Country::find($destination['country_id'])->name,
+            ]);
+        }
+
+        $tax = 0;
+        $shipping = 0;
+        $subtotal = 0;
+
+        foreach ($carts as $key => $cartItem) {
+            $product = \App\Models\Product::find($cartItem['product_id']);
+            $tax += $cartItem['tax'] * $cartItem['quantity'];
+            $subtotal += $cartItem['price'] * $cartItem['quantity'];
+
+            if ($request['shipping_type_' . $product->user_id] == 'pickup_point') {
+                $cartItem['shipping_type'] = 'pickup_point';
+                $cartItem['pickup_point'] = $request['pickup_point_id_' . $product->user_id];
+            } else {
+                $cartItem['shipping_type'] = 'home_delivery';
+            }
+            $cartItem['shipping_cost'] = 0;
+            if ($cartItem['shipping_type'] == 'home_delivery') {
+                $cartItem['shipping_cost'] = getShippingCost($carts, $key);
+            }
+
+            if(isset($cartItem['shipping_cost']) && is_array(json_decode($cartItem['shipping_cost'], true))) {
+
+                foreach(json_decode($cartItem['shipping_cost'], true) as $shipping_region => $val) {
+                    if($shipping_info['city'] == $shipping_region) {
+                        $cartItem['shipping_cost'] = (double)($val);
+                        break;
+                    } else {
+                        $cartItem['shipping_cost'] = 0;
+                    }
+                }
+            } else {
+                if (!$cartItem['shipping_cost'] ||
+                        $cartItem['shipping_cost'] == null ||
+                        $cartItem['shipping_cost'] == 'null') {
+
+                    $cartItem['shipping_cost'] = 0;
+                }
+            }
+
+            $shipping += $cartItem['shipping_cost'];
+            $cartItem->save();
+
+        }
+
         // Minumum order amount check
         if(get_setting('minimum_order_amount_check') == 1){
             $subtotal = 0;
@@ -49,7 +110,7 @@ class CheckoutController extends Controller
         }
         // Minumum order amount check end
 
-        if ($request->payment_option != null) {
+        // if ($request->payment_option != null) {
             (new OrderController)->store($request);
 
             $request->session()->put('payment_type', 'cart_payment');
@@ -74,10 +135,10 @@ class CheckoutController extends Controller
                     return redirect()->route('order_confirmed');
                 #}
             }
-        } else {
-            flash(translate('Select Payment Option.'))->warning();
-            return back();
-        }
+        // } else {
+        //     flash(translate('Select Payment Option.'))->warning();
+        //     return back();
+        // }
     }
 
     //redirects to this method after a successfull checkout

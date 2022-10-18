@@ -13,16 +13,16 @@
                             <h3 class="fs-14 fw-600 d-none d-lg-block">{{ translate('1. My Cart')}}</h3>
                         </div>
                     </div>
-                    <div class="col">
+                    {{-- <div class="col">
                         <div class="text-center">
                             <i class="la-3x mb-2 opacity-50 las la-credit-card"></i>
                             <h3 class="fs-14 fw-600 d-none d-lg-block opacity-50">{{ translate('2. Payment Method')}}</h3>
                         </div>
-                    </div>
+                    </div> --}}
                     <div class="col">
                         <div class="text-center">
                             <i class="la-3x mb-2 opacity-50 las la-check-circle"></i>
-                            <h3 class="fs-14 fw-600 d-none d-lg-block opacity-50">{{ translate('3. Confirmation')}}</h3>
+                            <h3 class="fs-14 fw-600 d-none d-lg-block opacity-50">{{ translate('2. Confirmation')}}</h3>
                         </div>
                     </div>
                 </div>
@@ -140,7 +140,7 @@
             <div class="row">
                 <div class="col-xxl-8 col-xl-10 mx-auto">
                     <div class="shadow-sm bg-white p-3 p-lg-4 rounded text-left">
-                        <form action="{{ route('checkout.store_delivery_info') }}" method="post">
+                        <form action="{{ route('payment.checkout') }}" method="post">
                             @csrf
                             <div shipping-info>
                                 <div class="card-header p-3">
@@ -532,20 +532,9 @@
                                     <i class="la la-angle-left"></i>
                                     {{ translate('Return to shop')}}
                                 </a>
-                                <button type="submit" class="btn fw-600 btn-primary">{{ translate('Next Step')}}</button>
+                                <button type="submit" class="btn fw-600 btn-primary">{{ translate('Confirm Order')}}</button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </div>
-        @else
-            <div class="row">
-                <div class="col-xl-8 mx-auto">
-                    <div class="shadow-sm bg-white p-4 rounded">
-                        <div class="text-center p-3">
-                            <i class="las la-frown la-3x opacity-60 mb-3"></i>
-                            <h3 class="h4 fw-700">{{translate('Your Cart is empty')}}</h3>
-                        </div>
                     </div>
                 </div>
             </div>
